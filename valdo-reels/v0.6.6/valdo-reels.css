@@ -1,0 +1,1693 @@
+/*! valdo-reels v0.6.6 | https://github.com/VirtualArkansasOrg/valdo-reels */
+/* base.css - tokens, marker hiding, root layout.
+   Everything except marker hiding is scoped under .vr-root, so the CSS
+   alone can never change a normal CourseArc page. */
+
+/* Only the load sentinel is declared here. Theme tokens are read with
+   fallbacks, var(--vr-accent, #1b3168), so a theme can set any of them
+   on :root in any stylesheet, before or after this one:
+     --vr-accent, --vr-accent-text, --vr-bg, --vr-panel-bg, --vr-border,
+     --vr-panel-width, --vr-radius, --vr-nav-size, --vr-transition,
+     --vr-top-offset, --vr-max-width, --vr-fade (page background color,
+     used for the "More below" fade on tall stacks) */
+:root {
+  --vr-css-loaded: 1;
+}
+
+/* Markers are never visible to students, with or without the JS. Only
+   the four real marker kinds are matched. */
+[data-reel="page" i],
+[data-reel="stack" i],
+[data-reel="sidecar" i],
+[data-reel="end" i],
+.valdo-reel-page,
+.valdo-reel-stack,
+.valdo-reel-sidecar,
+.valdo-reel-end,
+.vr-marker-block {
+  display: none !important;
+}
+
+html.vr-on .vr-root {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  height: calc(100vh - var(--vr-top-offset, 0px));
+  height: calc(100dvh - var(--vr-top-offset, 0px));
+}
+
+/* A page scroll that ends near the reel settles exactly on it, so its
+   controls are not half off-screen. Proximity: far away, nothing snaps. */
+html.vr-on {
+  scroll-snap-type: y proximity;
+}
+
+html.vr-on .vr-root {
+  scroll-snap-align: start;
+  scroll-margin-top: var(--vr-top-offset, 0px);
+}
+
+/* Inside an LMS iframe that grows to fit the page (Canvas), vh is the
+   whole lesson; frame.js sets the visible window height instead. Not
+   when the host (the Canvas script) makes the frame fit the window. */
+html.vr-on.vr-framed:not(.vr-hosted) .vr-root {
+  height: var(--vr-height, 640px);
+  background: var(--vr-bg, transparent);
+  color: inherit;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+/* Our own elements only: moved CourseArc blocks keep their own sizing. */
+html.vr-on .vr-root,
+html.vr-on .vr-reel,
+html.vr-on .vr-stack,
+html.vr-on .vr-body,
+html.vr-on .vr-body-inner,
+html.vr-on .vr-controls,
+html.vr-on .vr-controls *,
+html.vr-on .vr-sidecar,
+html.vr-on .vr-sidecar-inner,
+html.vr-on .vr-sidecar-head,
+html.vr-on .vr-sidecar-head *,
+html.vr-on .vr-sidecar-body,
+html.vr-on .vr-sidecar-open,
+html.vr-on .vr-more-hint {
+  box-sizing: border-box;
+}
+
+html.vr-on .vr-sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* stack.css - the snap scroller and one-screen stacks.
+   Tall content scrolls inside .vr-body; when it reaches its edge the
+   scroll chains to .vr-reel, which snaps to the next stack. */
+
+html.vr-on .vr-reel {
+  position: relative;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+html.vr-on .vr-stack {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  height: 100%;
+  overflow: hidden;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+html.vr-on .vr-stack:focus {
+  outline: none;
+}
+
+html.vr-on .vr-stack:focus-visible {
+  outline: 3px solid var(--vr-accent, #1b3168);
+  outline-offset: -3px;
+}
+
+html.vr-on .vr-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  padding: 24px 24px 88px;
+}
+
+/* Content starts at the top of the screen (centering short content left
+   a large empty band above it on tall screens), centered horizontally. */
+html.vr-on .vr-body-inner {
+  width: 100%;
+  max-width: var(--vr-max-width, 900px);
+  margin: 0 auto;
+}
+
+html.vr-on .vr-sidecar-open {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  min-height: var(--vr-nav-size, 44px);
+  padding: 8px 18px;
+  /* Secondary style: the reel's arrows (and "Next: ...") stay the main
+     way forward; this opens extra material beside the screen. */
+  border: 2px solid var(--vr-accent, #1b3168);
+  border-radius: 999px;
+  background: var(--vr-panel-bg, #ffffff);
+  color: var(--vr-accent, #1b3168);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  /* The other half of the bottom strip is the Back/Next bar's. */
+  max-width: calc(50% - 36px);
+  text-align: left;
+}
+
+html.vr-on .vr-sidecar-open .vr-icon {
+  flex: none;
+}
+
+html.vr-on .vr-sidecar-open:focus-visible {
+  outline: 3px solid var(--vr-accent, #1b3168);
+  outline-offset: 3px;
+}
+
+/* Sidecar placement rules (vr-shifted, vr-pos-*) are in sidecar.css. */
+
+/* Tall stacks: fade plus "More below" hint while unread content remains. */
+html.vr-on .vr-more-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 96px;
+  padding-bottom: 10px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--vr-fade, #ffffff) 70%);
+  font-size: 0.85em;
+  font-weight: 600;
+  cursor: pointer;
+  pointer-events: none;
+}
+
+html.vr-on .vr-stack.vr-more .vr-more-hint {
+  display: flex;
+}
+
+html.vr-on .vr-more-hint span,
+html.vr-on .vr-more-hint svg {
+  pointer-events: auto;
+}
+
+/* Keep the sidecar button clear of the hint on tall stacks. */
+html.vr-on .vr-stack.vr-more.vr-has-sidecar .vr-more-hint {
+  align-items: flex-start;
+  padding-left: 24px;
+}
+
+/* sidecar.css - right panel on wide screens, bottom sheet on narrow. */
+
+html.vr-on .vr-sidecar {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--vr-panel-bg, #ffffff);
+  color: inherit;
+  font: inherit;
+}
+
+html.vr-on .vr-sidecar:not([open]) {
+  display: none;
+}
+
+/* Wide, non-modal panel. Default position: right, stack shifts left. */
+html.vr-on .vr-sidecar[open]:not(.vr-sheet) {
+  position: static;
+  inset: auto;
+  grid-row: 1;
+  width: auto;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  border-left: 1px solid var(--vr-border, rgba(0, 0, 0, 0.18));
+  overflow: hidden;
+}
+
+html.vr-on .vr-stack.vr-shifted {
+  grid-template-columns: minmax(0, 1fr) min(var(--vr-panel-width, 380px), 50%);
+}
+
+html.vr-on .vr-stack.vr-shifted .vr-body {
+  grid-row: 1;
+}
+
+html.vr-on .vr-stack.vr-shifted .vr-sidecar-open {
+  right: calc(min(var(--vr-panel-width, 380px), 50%) + 16px);
+}
+
+html.vr-on .vr-stack.vr-shifted .vr-more-hint {
+  right: min(var(--vr-panel-width, 380px), 50%);
+}
+
+/* Left: panel first, stack shifts right. */
+html.vr-on .vr-stack.vr-pos-left.vr-shifted {
+  grid-template-columns: min(var(--vr-panel-width, 380px), 50%) minmax(0, 1fr);
+}
+
+html.vr-on .vr-stack.vr-pos-left.vr-shifted .vr-body {
+  grid-column: 2;
+}
+
+html.vr-on .vr-stack.vr-pos-left .vr-sidecar[open]:not(.vr-sheet) {
+  grid-column: 1;
+  border-left: 0;
+  border-right: 1px solid var(--vr-border, rgba(0, 0, 0, 0.18));
+}
+
+html.vr-on .vr-stack.vr-pos-left.vr-shifted .vr-sidecar-open {
+  right: 16px;
+}
+
+html.vr-on .vr-stack.vr-pos-left.vr-shifted .vr-more-hint {
+  right: 0;
+  left: min(var(--vr-panel-width, 380px), 50%);
+}
+
+/* Overlay: panel floats over the right of the stack, nothing moves. */
+html.vr-on .vr-stack.vr-pos-overlay.vr-shifted {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+html.vr-on .vr-stack.vr-pos-overlay .vr-sidecar[open]:not(.vr-sheet) {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  bottom: 12px;
+  left: auto;
+  z-index: 2;
+  width: min(var(--vr-panel-width, 380px), calc(100% - 24px));
+  height: auto;
+  border: 1px solid var(--vr-border, rgba(0, 0, 0, 0.18));
+  border-radius: var(--vr-radius, 12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+html.vr-on .vr-stack.vr-pos-overlay.vr-shifted .vr-more-hint {
+  right: 0;
+}
+
+html.vr-on .vr-stack.vr-pos-overlay.vr-shifted .vr-sidecar-open {
+  right: calc(min(var(--vr-panel-width, 380px), 100% - 24px) + 28px);
+}
+
+html.vr-on .vr-sidecar-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: inherit;
+}
+
+html.vr-on .vr-sidecar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 8px 8px 16px;
+  border-bottom: 1px solid var(--vr-border, rgba(0, 0, 0, 0.18));
+}
+
+html.vr-on .vr-sidecar-title {
+  margin: 0;
+  font-size: 1.15em;
+}
+
+html.vr-on .vr-sidecar-title:focus {
+  outline: none;
+}
+
+html.vr-on .vr-sidecar-title:focus-visible {
+  outline: 3px solid var(--vr-accent, #1b3168);
+  outline-offset: 2px;
+}
+
+html.vr-on .vr-sidecar-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  overscroll-behavior: contain;
+}
+
+/* Bottom sheet: modal, in the top layer. Used for position "bottom" and
+   for every position on narrow screens (JS adds .vr-sheet). */
+html.vr-on .vr-sidecar.vr-sheet[open] {
+  position: fixed;
+  inset: auto 0 0 0;
+  width: 100%;
+  max-width: 760px;
+  height: auto;
+  max-height: 80vh;
+  max-height: 80dvh;
+  margin: 0 auto;
+  border: 0;
+  border-radius: var(--vr-radius, 12px) var(--vr-radius, 12px) 0 0;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.25);
+  animation: vr-sheet-in var(--vr-transition, 250ms) ease-out;
+}
+
+html.vr-on .vr-sidecar.vr-sheet .vr-sidecar-inner {
+  max-height: 80vh;
+  max-height: 80dvh;
+}
+
+/* Framed: frame.js anchors the sheet to the visible part of the reel
+   (inline bottom), since the frame's own bottom may be far off-screen. */
+html.vr-on.vr-framed:not(.vr-hosted) .vr-sidecar.vr-sheet[open],
+html.vr-on.vr-framed:not(.vr-hosted) .vr-sidecar.vr-sheet .vr-sidecar-inner {
+  max-height: calc(var(--vr-height, 640px) * 0.8);
+}
+
+html.vr-on .vr-sidecar.vr-sheet::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+@keyframes vr-sheet-in {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* Nothing behind an open sheet scrolls (touch on the backdrop or header).
+   Only html is locked: its overflow moves to the viewport. Never lock
+   body: CourseArc sets html, body { height: 100% }, and a clipped body
+   shrinks the page to one screen, which resets the scroll to the top. */
+html.vr-on.vr-sheet-open,
+html.vr-on.vr-sheet-open .vr-reel {
+  overflow: hidden;
+}
+
+html.vr-on .vr-sidecar.vr-sheet {
+  overscroll-behavior: contain;
+}
+
+/* nav.css - up/down buttons, progress dots, counter. */
+
+/* The nav comes first in the DOM (Tab order) but sits in column 2. */
+html.vr-on .vr-reel {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+html.vr-on .vr-controls {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px;
+}
+
+html.vr-on .vr-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--vr-nav-size, 44px);
+  height: var(--vr-nav-size, 44px);
+  padding: 0;
+  border: 1px solid var(--vr-border, rgba(0, 0, 0, 0.18));
+  border-radius: 50%;
+  background: var(--vr-panel-bg, #ffffff);
+  color: inherit;
+  cursor: pointer;
+}
+
+html.vr-on .vr-btn:hover {
+  border-color: var(--vr-accent, #1b3168);
+}
+
+html.vr-on .vr-btn:focus-visible,
+html.vr-on .vr-dot:focus-visible {
+  outline: 3px solid var(--vr-accent, #1b3168);
+  outline-offset: 2px;
+}
+
+html.vr-on .vr-btn[aria-disabled="true"] {
+  opacity: 0.35;
+  cursor: default;
+}
+
+html.vr-on .vr-dots {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+html.vr-on .vr-dots li {
+  margin: 0;
+  padding: 0;
+}
+
+/* 24px hit area around a 10px dot. */
+html.vr-on .vr-dot {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Section progress: short bars (the lesson's page list uses round,
+   connected dots, so the two levels never look alike). */
+html.vr-on .vr-dot::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 8px;
+  width: 8px;
+  height: 14px;
+  top: 5px;
+  border-radius: 3px;
+  /* Steps still ahead: hollow (outline 4.8:1, 3:1 non-text contrast);
+     steps seen: solid; this step: solid, taller, ringed. */
+  box-sizing: border-box;
+  border: 0;
+  /* Steps ahead: short gray bars; seen: accent bars; current: tall, ringed. */
+  background: var(--vr-muted, #6b7280);
+  height: 8px;
+  top: 8px;
+}
+
+html.vr-on .vr-dot.vr-dot-done::before {
+  background: var(--vr-accent, #1b3168);
+  height: 14px;
+  top: 5px;
+}
+
+/* Steps already seen: accent, short; this step: accent, tall. */
+html.vr-on .vr-dot.vr-dot-done::before {
+  background: var(--vr-accent, #1b3168);
+}
+
+html.vr-on .vr-dot[aria-current]::before {
+  box-shadow: 0 0 0 2px var(--vr-panel-bg, #ffffff), 0 0 0 3px var(--vr-accent, #1b3168);
+  top: 2px;
+  width: 8px;
+  left: 8px;
+  height: 20px;
+  background: var(--vr-accent, #1b3168);
+}
+
+html.vr-on .vr-counter,
+html.vr-on .vr-map-cap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+html.vr-on .vr-counter-cap,
+html.vr-on .vr-map-word {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--vr-muted, #6b7280);
+}
+
+/* Forward is the main action: the down button is filled while there is
+   somewhere to go. */
+html.vr-on .vr-next:not([aria-disabled="true"]) {
+  border-color: var(--vr-accent, #1b3168);
+  background: var(--vr-accent, #1b3168);
+  color: var(--vr-accent-text, #ffffff);
+}
+
+@media (max-width: 767.98px) {
+  html.vr-on .vr-root {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* A dock along the bottom, so the text gets the full width. */
+  html.vr-on .vr-controls {
+    position: absolute;
+    z-index: 3; /* first in DOM order, so it must be lifted above the reel */
+    /* auto grid area: positioned against the whole root, not column 2. */
+    grid-column: auto;
+    grid-row: auto;
+    left: 50%;
+    bottom: 8px;
+    flex-direction: row;
+    gap: 6px;
+    max-width: calc(100% - 16px);
+    box-sizing: border-box;
+    padding: 4px 6px;
+    border-radius: 999px;
+    background: var(--vr-panel-bg, #ffffff);
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.2);
+    transform: translateX(-50%);
+  }
+
+  html.vr-on .vr-controls > .vr-btn,
+  html.vr-on .vr-counter {
+    flex: none;
+  }
+
+  /* The sections shrink (and clip) before any button does. */
+  html.vr-on .vr-dots,
+  html.vr-on .vr-map {
+    flex-direction: row;
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  html.vr-on .vr-dot {
+    width: 24px;
+    height: 44px;
+  }
+
+  html.vr-on .vr-dot::before {
+    top: 16px;
+  }
+
+  html.vr-on .vr-dot[aria-current]::before {
+    top: 12px;
+  }
+
+  html.vr-on .vr-counter {
+    padding: 0 2px;
+  }
+
+  html.vr-on .vr-body {
+    padding-right: 16px;
+    padding-left: 16px;
+    padding-bottom: calc(var(--vr-nav-size, 44px) + 40px);
+  }
+
+  /* Room for a side-panel button or a Back/Next bar above the dock. */
+  html.vr-on .vr-stack.vr-has-sidecar .vr-body,
+  html.vr-on .vr-root.vr-page-bar-on .vr-body {
+    padding-bottom: calc(2 * var(--vr-nav-size, 44px) + 52px);
+  }
+
+}
+
+@media (max-width: 599.98px) {
+  html.vr-on .vr-root.vr-page-bar-on .vr-stack.vr-has-sidecar .vr-body {
+    padding-bottom: calc(3 * var(--vr-nav-size, 44px) + 64px);
+  }
+}
+
+@media (max-width: 767.98px) {
+
+  html.vr-on .vr-more-hint {
+    bottom: calc(var(--vr-nav-size, 44px) + 16px);
+  }
+}
+
+/* Wide screens: up arrow at the top of the rail, down arrow at the
+   bottom, dots and counter centered between them. */
+@media (min-width: 768px) {
+  /* Anchored to the bottom of the reel, so the forward button stays put
+     when the header condenses (and sits on the same line as Next). */
+  html.vr-on .vr-controls {
+    align-self: end;
+    margin-bottom: 12px !important;
+    justify-content: center;
+    gap: 10px;
+    margin: 0 8px;
+    padding: 8px;
+    border-radius: 999px;
+    background: var(--vr-panel-bg, #ffffff);
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.14);
+  }
+}
+
+/* Narrow: keep the sidecar button clear of the overlaid control rail. */
+@media (max-width: 767.98px) {
+  html.vr-on .vr-sidecar-open {
+    right: 12px;
+    bottom: calc(var(--vr-nav-size, 44px) + 28px);
+    max-width: calc(50% - 18px);
+  }
+}
+
+@media (max-width: 599.98px) {
+  html.vr-on .vr-sidecar-open {
+    max-width: calc(100% - 24px);
+  }
+}
+
+/* Short or zoomed screens (WCAG 1.4.10): drop the dots, keep the
+   counter, and give content more of the height. */
+@media (max-height: 500px) {
+  html.vr-on .vr-dots {
+    display: none;
+  }
+
+  html.vr-on .vr-controls {
+    gap: 4px;
+    padding: 4px;
+  }
+
+  html.vr-on .vr-body {
+    padding-top: 8px;
+    padding-bottom: calc(var(--vr-nav-size, 44px) + 16px);
+  }
+
+  html.vr-on .vr-sidecar-open {
+    bottom: 8px;
+  }
+}
+
+/* pagenav.css - the host page's own page navigation while the reel is on:
+   the page list collapses to a slim rail of page dots (pagenav.js marks
+   it), phones get a dots button that opens the host's page menu, and the
+   up/down buttons turn into previous/next page at the ends of the reel
+   (pagelinks.js). Only our classes are used here. */
+
+/* The host's prev/next links: the reel buttons take over. */
+html.vr-on .vr-pagelinks-hidden {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  /* !important: the host sizes these columns with more specific rules. */
+  html.vr-on .vr-pagenav-content {
+    width: calc(100% - var(--vr-pagenav-strip, 36px)) !important;
+  }
+
+  /* overflow: clip (not hidden) keeps the sticky parts able to stick. */
+  html.vr-on .vr-pagenav {
+    position: relative;
+    z-index: 4;
+    width: var(--vr-pagenav-strip, 36px) !important;
+    margin-right: 0;
+    overflow: hidden;
+    overflow: clip;
+  }
+
+  /* Animate only after the first collapse (pagenav.js adds the class a
+     moment later), so the list does not visibly shrink on page load. */
+  html.vr-on .vr-pagenav.vr-pagenav-anim {
+    transition: width var(--vr-transition, 250ms) ease 300ms,
+      margin-right var(--vr-transition, 250ms) ease 300ms,
+      box-shadow var(--vr-transition, 250ms) ease 300ms;
+  }
+
+  html.vr-on .vr-pagenav:not(:hover):not(:focus-within) {
+    padding-right: 6px !important;
+    padding-left: 6px !important;
+  }
+
+  html.vr-on .vr-pagenav > :not(.vr-pagenav-dots) {
+    opacity: 0;
+  }
+
+  html.vr-on .vr-pagenav.vr-pagenav-anim > :not(.vr-pagenav-dots) {
+    transition: opacity 150ms ease 300ms;
+  }
+
+  /* The dots and the list follow the student down the page, so the list
+     opens in view next to the reel, not at the top of a tall column. */
+  html.vr-on .vr-pagenav-dots,
+  html.vr-on .vr-pagenav-dots + * {
+    position: sticky;
+    top: calc(var(--vr-top-offset, 0px) + 16px);
+  }
+
+  html.vr-on .vr-pagenav-dots + * {
+    max-height: calc(100vh - var(--vr-top-offset, 0px) - 32px);
+    overflow-y: auto;
+  }
+
+  /* Collapsed: one dot per page, the current page filled. height: 0
+     lets the dots sit over the hidden list instead of pushing it down. */
+  html.vr-on .vr-pagenav-dots {
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    height: 0;
+    padding-top: 4px;
+    transition: opacity 150ms ease;
+  }
+
+  /* A connected line of page dots (a timeline), so they read as a
+     different thing from the reel's own section dots. */
+  html.vr-on .vr-pagenav-dot {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    box-sizing: border-box;
+    border: 2px solid var(--vr-muted, #6b7280);
+    border-radius: 50%;
+    background: var(--vr-panel-bg, #ffffff);
+    position: relative;
+  }
+
+  html.vr-on .vr-pagenav-dot:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    width: 2px;
+    height: 20px;
+    margin-left: -1px;
+    background: var(--vr-muted, #6b7280);
+    opacity: 0.4;
+  }
+
+  html.vr-on .vr-pagenav-dot-current {
+    width: 14px;
+    height: 14px;
+    border-color: var(--vr-accent, #1b3168);
+    background: var(--vr-accent, #1b3168);
+  }
+
+  /* Open: slide out OVER the content (negative margin), so the reel
+     never reflows. */
+  html.vr-on .vr-pagenav.vr-pagenav-anim:hover,
+  html.vr-on .vr-pagenav.vr-pagenav-anim:focus-within {
+    transition-delay: 120ms;
+  }
+
+  html.vr-on .vr-pagenav:hover,
+  html.vr-on .vr-pagenav:focus-within {
+    width: var(--vr-pagenav-width, 220px) !important;
+    margin-right: calc(var(--vr-pagenav-strip, 36px) - var(--vr-pagenav-width, 220px));
+    background: var(--vr-pagenav-bg, var(--vr-panel-bg, #ffffff));
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.18);
+  }
+
+  html.vr-on .vr-pagenav:hover > :not(.vr-pagenav-dots),
+  html.vr-on .vr-pagenav:focus-within > :not(.vr-pagenav-dots) {
+    opacity: 1;
+  }
+
+  html.vr-on .vr-pagenav.vr-pagenav-anim:hover > :not(.vr-pagenav-dots),
+  html.vr-on .vr-pagenav.vr-pagenav-anim:focus-within > :not(.vr-pagenav-dots) {
+    transition-delay: 120ms;
+  }
+
+  html.vr-on .vr-pagenav:hover > .vr-pagenav-dots,
+  html.vr-on .vr-pagenav:focus-within > .vr-pagenav-dots {
+    opacity: 0;
+  }
+}
+
+/* Narrow screens: the host hides its page list, so the dots are unused. */
+@media (max-width: 767.98px) {
+  html.vr-on .vr-pagenav-dots {
+    display: none;
+  }
+}
+
+html.vr-on .vr-map-cap {
+  margin: 0;
+}
+
+@media (max-width: 767.98px) {
+  html.vr-on .vr-map-cap {
+    display: none;
+  }
+}
+
+/* Phones: the reel's dots button opens the host's own page menu. */
+html.vr-on .vr-pages-btn {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  html.vr-on .vr-pages-btn {
+    display: inline-flex;
+  }
+
+  /* With "PAGE n of N" beside the icon: a pill, not a circle. */
+  html.vr-on .vr-pages-btn.vr-pages-btn-wide {
+    width: auto;
+    gap: 6px;
+    padding: 0 12px 0 10px;
+    border-radius: 999px;
+  }
+
+  html.vr-on .vr-pages-where {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 14px;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  html.vr-on .vr-pages-cap {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--vr-muted, #6b7280);
+  }
+
+  /* The dock says "STEP n of N" in words; the bars would be too small
+     to tap and too many to fit beside the page button. */
+  html.vr-on .vr-dots {
+    display: none;
+  }
+}
+
+/* Up/down button in "change page" mode: Next filled, Back outlined. */
+html.vr-on .vr-btn.vr-to-page {
+  position: relative;
+  border-color: var(--vr-accent, #1b3168);
+  background: var(--vr-accent, #1b3168);
+  color: var(--vr-accent-text, #ffffff);
+}
+
+/* Up leaving the page looks like any up arrow: emphasis stays on going
+   forward; the "Previous page:" / "Back to activity:" bar says where. */
+html.vr-on .vr-prev.vr-to-page {
+  border-color: var(--vr-border, rgba(0, 0, 0, 0.18));
+  background: var(--vr-panel-bg, #ffffff);
+  color: inherit;
+}
+
+/* Where the arrow goes, as a bar centered along the bottom of the
+   screen: the reel keeps that strip free (bottom padding), the side-
+   panel button sits at the right and "More below" at the left. */
+html.vr-on .vr-page-bar[hidden] {
+  display: none;
+}
+
+html.vr-on .vr-page-bar {
+  position: absolute;
+  z-index: 4;
+  bottom: 16px;
+  left: 24px;
+  max-width: min(640px, calc(100% - 48px));
+  min-height: var(--vr-nav-size, 44px);
+  padding: 9px 18px;
+  box-sizing: border-box;
+  border: 2px solid var(--vr-accent, #1b3168);
+  /* A pill at one line, a soft rectangle (not a blob) at two or three. */
+  border-radius: 22px;
+  background: var(--vr-accent, #1b3168);
+  color: var(--vr-accent-text, #ffffff);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  animation: vr-page-hint-in 300ms ease;
+}
+
+/* The exit icon shows only when the bar leaves the lesson. */
+html.vr-on .vr-page-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+html.vr-on .vr-page-bar-icon {
+  display: none;
+  flex: none;
+}
+
+html.vr-on .vr-page-bar-icon svg {
+  display: block;
+}
+
+/* The arrow itself shows the exit icon when it leaves the lesson. */
+html.vr-on .vr-next.vr-exit svg {
+  transform: scaleX(-1);
+}
+
+html.vr-on .vr-page-bar-exit .vr-page-bar-icon {
+  display: block;
+}
+
+/* Out of the box to the right when going forward. */
+html.vr-on .vr-page-bar-next .vr-page-bar-icon svg {
+  transform: scaleX(-1);
+}
+
+/* Back: the same pill, outlined (forward stays the filled one). */
+html.vr-on .vr-page-bar-prev {
+  background: var(--vr-panel-bg, #ffffff);
+  color: var(--vr-accent, #1b3168);
+  font-weight: 600;
+  box-shadow: none;
+}
+
+/* Two lines at most; the clamp sits on the inner text (no padding),
+   so no half line ever shows. Full title in the tooltip and name. */
+/* Two lines at most; the clamp sits on the inner text (no padding), so
+   no half line ever shows. Full name in the tooltip and arrow's name. */
+html.vr-on .vr-page-bar-text {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.3;
+  max-height: 2.6em;
+  text-align: left;
+}
+
+/* Both ends on one screen (a one-screen lesson): Next above Back. */
+html.vr-on .vr-page-bar-prev:not([hidden]) ~ .vr-page-bar-next {
+  bottom: calc(var(--vr-nav-size, 44px) + 28px);
+}
+
+@media (max-width: 899.98px) {
+  html.vr-on .vr-page-bar-text {
+    -webkit-line-clamp: 3;
+    max-height: 3.9em;
+  }
+}
+
+@media (max-width: 767.98px) {
+  /* Above the control dock: the bar takes the left half of the row, a
+     side-panel button the right half. */
+  html.vr-on .vr-page-bar {
+    left: 12px;
+    bottom: calc(var(--vr-nav-size, 44px) + 28px);
+    max-width: calc(100% - 24px);
+  }
+}
+
+@media (max-width: 599.98px) {
+  /* Phones: one per row, full width, the bar above the side-panel button. */
+  html.vr-on .vr-page-bar {
+    right: 12px;
+    max-width: none !important;
+  }
+
+  html.vr-on .vr-page-bar-text {
+    -webkit-line-clamp: 3;
+    max-height: 3.9em;
+  }
+
+  html.vr-on .vr-page-bar.vr-page-bar-raised {
+    bottom: calc(2 * var(--vr-nav-size, 44px) + 40px);
+  }
+}
+
+@keyframes vr-page-hint-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Combined rail (pagenav.js vrBuildPageMap): the host's page column is
+   gone; its pages are circles in the reel's own rail. */
+html.vr-on .vr-pagenav-merged {
+  display: none !important;
+}
+
+html.vr-on .vr-pagenav-full {
+  width: 100% !important;
+}
+
+html.vr-on .vr-map {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+html.vr-on .vr-map-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+/* A short line joins the pages into one path. */
+html.vr-on .vr-map-item:not(:last-child)::after {
+  content: "";
+  width: 2px;
+  height: 6px;
+  background: var(--vr-muted, #6b7280);
+}
+
+html.vr-on .vr-map-page {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+html.vr-on .vr-map-page::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 2px solid var(--vr-muted, #6b7280);
+  border-radius: 50%;
+  background: var(--vr-panel-bg, #ffffff);
+}
+
+/* Hover: a soft ring (not a color change, which would look "done"). */
+html.vr-on .vr-map-page:hover::before {
+  box-shadow: 0 0 0 4px var(--vr-track, #e8eef8);
+}
+
+/* Pages before this one: accent outline with a check ("done"). */
+html.vr-on .vr-map-before > .vr-map-page::before {
+  border-color: var(--vr-accent, #1b3168);
+}
+
+html.vr-on .vr-map-before > .vr-map-page::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  width: 4px;
+  height: 7px;
+  border: solid var(--vr-accent, #1b3168);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+html.vr-on .vr-map-current > .vr-map-page::before {
+  border-color: var(--vr-accent, #1b3168);
+  background: var(--vr-accent, #1b3168);
+}
+
+html.vr-on .vr-map-page:focus-visible {
+  outline: 3px solid var(--vr-accent, #1b3168);
+  outline-offset: 1px;
+  border-radius: 50%;
+}
+
+/* The current page's sections sit in a tinted track under its circle:
+   visibly "inside" that page. */
+html.vr-on .vr-map-current > .vr-dots {
+  margin: 4px 0 0;
+  padding: 2px 0;
+  border-radius: 999px;
+  background: var(--vr-track, #e8eef8);
+}
+
+/* Page name beside the circle on hover or keyboard focus. */
+html.vr-on .vr-map-tip {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 12px);
+  display: none;
+  max-width: 280px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: #1f2937;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  width: max-content;
+  white-space: normal;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+html.vr-on .vr-map-page:hover .vr-map-tip,
+html.vr-on .vr-map-page:focus-visible .vr-map-tip {
+  display: block;
+}
+
+/* Phones: the dock shows this page's sections only; the list button
+   opens the page menu with names. */
+@media (max-width: 767.98px) {
+  html.vr-on .vr-map,
+  html.vr-on .vr-map-item {
+    flex-direction: row;
+  }
+
+  html.vr-on .vr-map-item:not(.vr-map-current),
+  html.vr-on .vr-map-current > .vr-map-page,
+  html.vr-on .vr-map-item::after {
+    display: none;
+  }
+
+  html.vr-on .vr-map-current > .vr-dots {
+    margin: 0;
+    padding: 0 2px;
+  }
+}
+
+/* The host's phone page menu while open from the reel (pagenav.js). */
+html.vr-on .vr-pagemenu-scrim {
+  position: fixed;
+  z-index: 1000;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+html.vr-on .vr-pagemenu-panel {
+  z-index: 1001 !important;
+}
+
+/* Current page: a filled pill and bold text ("you are here"). Keyboard
+   focus is a separate outline, so the two never look alike. */
+html.vr-on .vr-pagemenu-current {
+  display: inline-block;
+  padding: 4px 12px;
+  margin-left: -12px;
+  border-radius: 999px;
+  background: var(--vr-accent, #1b3168);
+  color: var(--vr-accent-text, #ffffff) !important;
+  font-weight: 700;
+  text-decoration: none !important;
+}
+
+html.vr-on .vr-pagemenu-panel a:focus {
+  outline: 3px solid var(--vr-accent, #1b3168);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+html.vr-on .vr-pagemenu-done::after {
+  content: "\2713";
+  margin-left: 6px;
+  color: var(--vr-accent, #1b3168);
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-block;
+}
+
+/* Page menu: numbered, like "PAGE n of N" on the button. */
+html.vr-on .vr-pagemenu-panel ul {
+  counter-reset: vr-page;
+}
+
+html.vr-on .vr-pagemenu-panel li {
+  counter-increment: vr-page;
+}
+
+html.vr-on .vr-pagemenu-panel li > a::before {
+  content: counter(vr-page) ". ";
+  font-weight: 700;
+}
+
+/* "PAGE n of N" is a button (shows all page names). */
+html.vr-on button.vr-map-cap {
+  padding: 3px 8px;
+  border: 1px solid var(--vr-border, rgba(0, 0, 0, 0.18));
+  border-radius: 999px;
+  background: var(--vr-panel-bg, #ffffff);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+html.vr-on button.vr-map-cap:hover {
+  background: var(--vr-track, #e8eef8);
+}
+
+html.vr-on button.vr-map-cap:focus-visible {
+  outline: 3px solid var(--vr-accent, #1b3168);
+  outline-offset: 2px;
+}
+
+@media (min-width: 768px) {
+  html.vr-on .vr-root.vr-map-open .vr-map-tip {
+    display: block;
+    background: #ffffff;
+    color: #1f2937;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+  }
+
+  html.vr-on .vr-root.vr-map-open .vr-map-current .vr-map-tip {
+    background: var(--vr-accent, #1b3168);
+    color: #ffffff;
+    border-color: var(--vr-accent, #1b3168);
+  }
+}
+
+/* shell.css - app shell inside an LMS iframe (shell.js adds the classes).
+   One screen tall, masthead on top, reel below as the only scroller.
+   Host elements are styled only through our vr-shell-* classes. */
+
+html.vr-on.vr-shell .vr-shell-col {
+  display: flex !important;
+  flex-direction: column;
+  height: var(--vr-height, 640px) !important;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Hosted (the Canvas script fits the frame to the window): the frame IS
+   the screen, so pin the column to it and let nothing else scroll. */
+html.vr-on.vr-shell.vr-hosted,
+html.vr-on.vr-shell.vr-hosted body {
+  height: 100%;
+  overflow: hidden;
+}
+
+html.vr-on.vr-shell.vr-hosted .vr-shell-col {
+  position: fixed !important;
+  top: var(--vr-shell-top, 0px);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  z-index: 1;
+}
+
+/* The page-dot rail sits in its own fixed column at the left edge. */
+@media (min-width: 768px) {
+  html.vr-on.vr-shell.vr-hosted.vr-shell-has-nav .vr-shell-col {
+    left: var(--vr-pagenav-strip, 36px);
+  }
+
+  html.vr-on.vr-shell.vr-hosted .vr-pagenav {
+    position: fixed !important;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    height: auto !important;
+    z-index: 6;
+  }
+}
+
+html.vr-on.vr-shell .vr-shell-flex {
+  display: flex !important;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  height: auto !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+html.vr-on.vr-shell .vr-shell-flex > :not(.vr-shell-flex):not(.vr-root) {
+  flex: none;
+}
+
+html.vr-on.vr-shell .vr-root {
+  flex: 1 1 auto !important;
+  height: auto !important;
+  min-height: 0;
+}
+
+/* Masthead, full: the brand banner is kept but the logo is smaller.
+   flex: none, or the column squeezes (and clips) it. */
+html.vr-on.vr-shell .vr-shell-brand,
+html.vr-on.vr-shell .vr-shell-foot {
+  flex: none;
+}
+
+/* Masthead, full: the brand banner is kept but the logo is smaller. */
+html.vr-on.vr-shell .vr-shell-brand {
+  max-height: 160px;
+  overflow: hidden;
+  transition: max-height var(--vr-transition, 250ms) ease, opacity var(--vr-transition, 250ms) ease;
+}
+
+html.vr-on.vr-shell .vr-shell-logo {
+  height: 64px !important;
+  max-height: 64px;
+  width: auto !important;
+}
+
+html.vr-on.vr-shell .vr-shell-titles {
+  transition: padding var(--vr-transition, 250ms) ease;
+}
+
+html.vr-on.vr-shell .vr-shell-titles h1,
+html.vr-on.vr-shell .vr-shell-titles h2 {
+  transition: font-size var(--vr-transition, 250ms) ease, margin var(--vr-transition, 250ms) ease;
+}
+
+/* Masthead, condensed: the banner text folds away and the logo shrinks
+   to 28px tall (brand guide: never cropped or altered, min 25px tall),
+   titles become one line. */
+/* One row: the brand row folds to nothing and the logo (28px tall)
+   sits at the start of the titles row; shell.js sets its width. */
+html.vr-on.vr-shell.vr-condensed .vr-shell-brand {
+  position: relative;
+  z-index: 2;
+  max-height: 0;
+  overflow: visible;
+}
+
+html.vr-on.vr-shell.vr-condensed .vr-shell-banner {
+  display: none !important;
+}
+
+html.vr-on.vr-shell.vr-condensed .vr-shell-logo,
+html.vr-on.vr-shell.vr-condensed .vr-shell-logo-small {
+  position: absolute;
+  top: 7px;
+  left: 0;
+  height: 30px !important;
+  max-height: 30px;
+  width: auto !important;
+  margin: 0 !important;
+}
+
+html.vr-on.vr-shell .vr-shell-logo,
+html.vr-on.vr-shell .vr-shell-logo-small {
+  transition: height var(--vr-transition, 250ms) ease;
+}
+
+html.vr-on.vr-shell.vr-condensed .vr-shell-titles {
+  display: flex !important;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px 16px;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 4px 0 4px calc(var(--vr-shell-logo-w, 48px) + 16px);
+  border-bottom: 1px solid var(--vr-border, rgba(0, 0, 0, 0.18));
+}
+
+html.vr-on.vr-shell.vr-condensed .vr-shell-titles h1,
+html.vr-on.vr-shell.vr-condensed .vr-shell-titles h2 {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  line-height: 1.3 !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html.vr-on.vr-shell.vr-condensed .vr-shell-titles h1 {
+  font-size: 17px !important;
+}
+
+html.vr-on.vr-shell.vr-condensed .vr-shell-titles h2 {
+  font-size: 15px !important;
+}
+
+html.vr-on.vr-shell.vr-condensed .vr-shell-titles > :last-child {
+  margin-left: auto;
+  flex: none;
+}
+
+/* Footer (copyright line): the theme's own text size, tight spacing. */
+html.vr-on.vr-shell .vr-shell-foot {
+  line-height: 1.3;
+}
+
+html.vr-on.vr-shell .vr-shell-foot * {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+}
+
+/* Larger body text for younger readers (scales text that inherits). */
+html.vr-on.vr-shell .vr-body-inner {
+  font-size: var(--vr-content-size, 16px);
+}
+
+/* The glossary link is positioned by the theme; in the one-line bar it
+   follows the titles instead of overlapping them. */
+html.vr-on.vr-shell.vr-condensed .vr-shell-titles > :last-child {
+  position: static !important;
+}
+
+@media (min-width: 600px) and (max-width: 899.98px) {
+  /* Medium condensed bar: both titles; the lesson title gives way first
+     so the page title stays whole. */
+  html.vr-on.vr-shell.vr-condensed .vr-shell-titles h1 {
+    flex: 0 1 auto;
+    min-width: 4em;
+  }
+
+  html.vr-on.vr-shell.vr-condensed .vr-shell-titles h2 {
+    flex: none;
+    max-width: 60%;
+  }
+}
+
+@media (max-width: 599.98px) {
+  /* Phone condensed bar: the page title only (the lesson title is in the
+     Canvas breadcrumb); visually hidden, still read by screen readers. */
+  html.vr-on.vr-shell.vr-condensed .vr-shell-titles h1 {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+  }
+
+  html.vr-on.vr-shell .vr-shell-titles h1 {
+    font-size: 22px !important;
+  }
+
+  html.vr-on.vr-shell .vr-shell-titles h2 {
+    font-size: 18px !important;
+  }
+}
+
+/* Titles laid out as a row: the theme positions "View Glossary"
+   absolutely, which collides with a long title on narrow frames. */
+html.vr-on.vr-shell .vr-shell-titles {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 16px;
+}
+
+html.vr-on.vr-shell .vr-shell-titles h1 {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+html.vr-on.vr-shell:not(.vr-condensed) .vr-shell-titles h2 {
+  flex: 1 1 100%;
+  order: 3;
+}
+
+html.vr-on.vr-shell .vr-shell-titles > :last-child {
+  position: static !important;
+  flex: none;
+}
+
+html.vr-on.vr-shell .vr-shell-foot {
+  max-height: none;
+}
+
+/* The host's own phone-menu button is covered by the shell; the reel's
+   "Lesson pages" button opens the same menu. */
+html.vr-on.vr-shell .vr-shell-hidden {
+  display: none !important;
+}
+
+/* Comfortable line length on wide frames, on the header's left edge. */
+html.vr-on.vr-shell .vr-body-inner {
+  max-width: min(var(--vr-max-width, 900px), 72ch);
+  margin-left: 0;
+}
+
+/* The lesson text starts on the header's left edge, at every width;
+   so do the Back/Next bars. */
+html.vr-on.vr-shell .vr-body {
+  padding-left: 0 !important;
+}
+
+html.vr-on.vr-shell .vr-page-bar {
+  left: 0;
+}
+
+
+@media (max-width: 767.98px) {
+  html.vr-on.vr-shell .vr-body {
+    padding-right: 0;
+  }
+}
+
+/* Phones: the theme's side margins are halved for a wider text column. */
+@media (max-width: 599.98px) {
+  html.vr-on.vr-shell .vr-shell-col {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+}
+
+
+/* Theme footer (copyright line): readable. The theme's white 11px text
+   on light gray is about 2.3:1; here dark gray (7.5:1) at 14px (brand
+   guide minimum for online text), on the page background. */
+html.vr-on.vr-shell .vr-shell-foot,
+html.vr-on.vr-shell .vr-shell-foot * {
+  background: transparent !important;
+  color: #4b5563 !important;
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+}
+
+html.vr-on.vr-shell .vr-shell-foot {
+  border-top: 1px solid #e5e7eb;
+}
+
+html.vr-on.vr-shell .vr-shell-foot > *,
+html.vr-on.vr-shell .vr-shell-foot p {
+  margin: 0 !important;
+  padding: 6px 0 !important;
+}
+
+/* Phones: the banner text is smaller, so the full header is not a
+   third of the screen. The logo is untouched (brand guide). */
+@media (max-width: 599.98px) {
+  html.vr-on.vr-shell .vr-shell-banner,
+  html.vr-on.vr-shell .vr-shell-banner * {
+    font-size: 15px !important;
+    line-height: 1.25 !important;
+  }
+}
+
+/* Narrow frames, full header: "View Glossary" after the page title, not
+   wedged between the lesson and page titles. */
+@media (max-width: 899.98px) {
+  html.vr-on.vr-shell:not(.vr-condensed) .vr-shell-titles > :last-child {
+    order: 4;
+    margin-top: 4px;
+  }
+}
+
+/* A rail taller than the reel (shell.js): no step bars, tighter gaps. */
+@media (min-width: 768px) {
+  html.vr-on .vr-root.vr-rail-tight .vr-controls {
+    gap: 4px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  html.vr-on .vr-root.vr-rail-tight .vr-map-current > .vr-dots,
+  html.vr-on .vr-root.vr-rail-tighter .vr-map {
+    display: none;
+  }
+}
+
+/* Very wide frames: the lesson column (header, reel and its rail) is
+   centered at a readable width instead of spanning the whole frame. */
+html.vr-on.vr-shell.vr-hosted .vr-shell-col {
+  max-width: 1240px;
+}
+
+/* Less air between the header and the step. */
+html.vr-on.vr-shell .vr-body {
+  padding-top: 12px;
+}
+
+/* Wide frames: header, reel, rail and footer share one right edge near
+   the text. */
+@media (min-width: 1100px) {
+  html.vr-on.vr-shell.vr-hosted .vr-shell-col {
+    max-width: 1060px;
+  }
+}
+
+/* markers-editor.css - in the editor, show each marker as a labeled
+   bar so designers can see the reel structure. html.vr-editor is set by
+   the JS when it detects an editor view; [contenteditable] covers rich
+   text editors that load our CSS but not our JS. */
+
+.vr-editor [data-reel="page" i],
+.vr-editor [data-reel="stack" i],
+.vr-editor [data-reel="sidecar" i],
+.vr-editor [data-reel="end" i],
+.vr-editor .valdo-reel-page,
+.vr-editor .valdo-reel-stack,
+.vr-editor .valdo-reel-sidecar,
+.vr-editor .valdo-reel-end,
+[contenteditable] [data-reel="page" i],
+[contenteditable] [data-reel="stack" i],
+[contenteditable] [data-reel="sidecar" i],
+[contenteditable] [data-reel="end" i],
+[contenteditable] .valdo-reel-page,
+[contenteditable] .valdo-reel-stack,
+[contenteditable] .valdo-reel-sidecar,
+[contenteditable] .valdo-reel-end {
+  display: block !important;
+  min-height: 1.6em;
+  margin: 4px 0;
+  padding: 4px 10px;
+  border: 2px dashed #7a3fbf;
+  border-radius: 4px;
+  background: #f3ecfb;
+  color: #3d1f60;
+  font: bold 13px/1.4 system-ui, sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.vr-editor .valdo-reel-page::before,
+[contenteditable] .valdo-reel-page::before { content: "REEL: PAGE (reel mode on) "; }
+.vr-editor .valdo-reel-stack::before,
+[contenteditable] .valdo-reel-stack::before { content: "REEL: STACK "; }
+.vr-editor .valdo-reel-sidecar::before,
+[contenteditable] .valdo-reel-sidecar::before { content: "REEL: SIDECAR "; }
+.vr-editor .valdo-reel-end::before,
+[contenteditable] .valdo-reel-end::before { content: "REEL: END "; }
+
+/* data-reel form: one rule per kind so the kind reads in capitals. */
+.vr-editor [data-reel="page"]::before,
+[contenteditable] [data-reel="page"]::before { content: "REEL: PAGE (reel mode on)"; }
+.vr-editor [data-reel="stack"]::before,
+[contenteditable] [data-reel="stack"]::before { content: "REEL: STACK " attr(data-title); }
+.vr-editor [data-reel="sidecar"]::before,
+[contenteditable] [data-reel="sidecar"]::before { content: "REEL: SIDECAR " attr(data-label); }
+.vr-editor [data-reel="end"]::before,
+[contenteditable] [data-reel="end"]::before { content: "REEL: END"; }
+
+/* reduced-motion.css - no smooth scrolling or sliding for users who ask. */
+
+@media (prefers-reduced-motion: reduce) {
+  html.vr-on .vr-reel {
+    scroll-behavior: auto;
+  }
+
+  /* Our elements only, so CourseArc widgets that wait for
+     transitionend keep working. */
+  html.vr-on .vr-sidecar,
+  html.vr-on .vr-more-hint,
+  html.vr-on .vr-btn,
+  html.vr-on .vr-dot::before,
+  html.vr-on .vr-sidecar-open,
+  html.vr-on .vr-page-hint,
+  html.vr-on .vr-pagenav,
+  html.vr-on .vr-pagenav > *,
+  html.vr-on .vr-pagenav-dots,
+  html.vr-on .vr-shell-brand,
+  html.vr-on .vr-shell-titles,
+  html.vr-on .vr-shell-titles h1,
+  html.vr-on .vr-shell-titles h2 {
+    animation: none !important;
+    transition: none !important;
+  }
+}
